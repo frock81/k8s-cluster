@@ -1,2 +1,11 @@
 ---
 - hosts: k8s_masters
+  vars_files:
+    - vars/k8s_masters/geerlingguy.pip.yml
+    - vars/k8s_masters/geerlingguy.docker-{{ env }}.yml
+  roles:
+    - role: geerlingguy.pip
+      tags: pip
+
+    - role: geerlingguy.docker
+      tags: docker
