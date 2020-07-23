@@ -18,7 +18,7 @@
         state: present
       with_sequence: start=1 end={{ instances }}
       tags: hosts
-        
+
     # May causes apt lock acquisition problems.
     - name: stop apt-daily service
       service:

@@ -8,6 +8,7 @@
     - name: get cluster nodes via kubectl
       command: kubectl get nodes
       register: result_get_nodes
+      changed_when: False
 
     - debug:
         var: result_get_nodes

@@ -40,7 +40,6 @@
       include_vars:
         file: vars/k8s/geerlingguy.kubernetes-node.yml
       when: "'k8s_master' not in group_names"
-
   roles:
     - role: geerlingguy.pip
       tags: pip
