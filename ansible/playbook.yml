@@ -1,4 +1,9 @@
 ---
 - import_playbook: play_dev.yml
-- import_playbook: play_k8s_master.yml
-- import_playbook: play_k8s_nodes.yml
+
+# The master must be setup previous the other nodes.
+- import_playbook: play_k8s.yml
+  when: "'k8s_master' in group_names"
+
+- import_playbook: play_k8s.yml
+  when: "'k8s_master' not in group_names"

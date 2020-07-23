@@ -1,12 +1,21 @@
 ---
-- hosts: k8s_master
+- hosts: k8s_nodes
   vars_files:
     - vars/k8s/{{ env }}.yml
     - vars/k8s/geerlingguy.pip.yml
     - vars/k8s/geerlingguy.docker-{{ env }}.yml
     - vars/k8s/geerlingguy.kubernetes.yml
-    - vars/k8s/geerlingguy.kubernetes-master.yml
   tasks:
+    - name: conditionally include variables for master
+      include_vars:
+        file: vars/k8s/geerlingguy.kubernetes-master.yml
+      when: "'k8s_master' in group_names"
+
+    - name: conditionally include variables for nodes other than master
+      include_vars:
+        file: vars/k8s/geerlingguy.kubernetes-node.yml
+      when: "'k8s_master' not in group_names"
+
     - name: import common tasks for both master and other nodes
       import_tasks: tasks/k8s.yml
 
@@ -27,7 +36,7 @@
             # unecessary, ineffective or may not work.
             owner: vagrant
             group: vagrant
-      when: env == 'dev'
+      when: env == 'dev' and 'k8s_master' in group_names
       tags: vagrant_kubeconfig
 
     # FIXME: the apropriate way to do is to verify if the config is applied,
