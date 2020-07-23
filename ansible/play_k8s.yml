@@ -2,8 +2,6 @@
 # Setup kubernetes cluster. Be sure to run the master play before the
 # other cluster nodes.
 
-# XXX: perhaps a refactor to put swap-off as `pre_tasks` and move the
-# `import_role` statements to a `roles` key.
 - hosts: k8s_nodes
   vars_files:
     - vars/k8s/{{ env }}.yml
