@@ -3,9 +3,65 @@
   vars_files:
     - vars/k8s_masters/geerlingguy.pip.yml
     - vars/k8s_masters/geerlingguy.docker-{{ env }}.yml
-  roles:
-    - role: geerlingguy.pip
+  # Not using `roles` keyword as usual because it may mislead about the
+  # roles used in the play as there will be other roles that will be
+  # added via import/include.
+  tasks:
+    - name: import Pip role
+      import_role:
+        name: geerlingguy.pip
       tags: pip
 
-    - role: geerlingguy.docker
+    - name: import Docker role
+      import_role:
+        name: geerlingguy.docker
       tags: docker
+
+    - name: disable swap
+      block:
+        - name: Remove swapfile from /etc/fstab
+          mount:
+            name: "{{ item }}"
+            fstype: swap
+            state: absent
+          with_items:
+            - swap
+            - none
+
+        - name: Disable swap
+          command: swapoff -a
+          when: ansible_swaptotal_mb > 0
+      tags: swap
+
+    - name: import Kubernetes role
+      import_role:
+        name: geerlingguy.kubernetes
+      tags: kubernetes
+
+    - name: force services restart to ensure configuration
+      meta: flush_handlers
+
+    - name: Setup kubeconfig for vagrant user
+      block:
+        - name: create kube config directory for user vagrant
+          file:
+            path: /home/vagrant/.kube
+            state: directory
+
+        # May use the template module if using a custom config.
+        - name: copy config kube config for user vagrant
+          copy:
+            remote_src: yes
+            src: /etc/kubernetes/admin.conf
+            dest: /home/vagrant/.kube/config
+            # Depending on the Vagrant synced folder type this may be
+            # unecessary, ineffective or may not work.
+            owner: vagrant
+            group: vagrant
+      when: env == 'dev'
+      tags: vagrant_kubeconfig
+
+    # - name: Install calico pod network
+    #   become: false
+    #   command: kubectl create -f https://docs.projectcalico.org/v3.4/getting-started/kubernetes/installation/hosted/calico.yaml
+    #   tags: calico
