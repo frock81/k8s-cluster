@@ -1,0 +1,45 @@
+---
+- hosts: all
+  become: yes
+  roles:
+    - role: robertdebock.bootstrap
+  tasks:
+    - name: hosts file
+      lineinfile:
+        path: /etc/hosts
+        regexp: "^192.168.4.8{{ item }}"
+        line: "192.168.4.8{{ item }}
+          {{'k8s-' + item  if item != '0' else 'k8s-master' }}.localdomain"
+        state: present
+      with_sequence: start=0 end=3
+      tags: hosts
+        
+    # May causes apt lock acquisition problems.
+    - name: stop apt-daily service
+      service:
+        name: "{{ item }}"
+        state: stopped
+      with_items:
+        - apt-daily.service
+        - apt-daily.timer
+      tags: apt_daily
+
+    - name: disable apt-daily service
+      service:
+        name: "{{ item }}"
+        enabled: no
+      with_items:
+        - apt-daily.service
+        - apt-daily.timer
+      tags: apt_daily
+
+    - name: update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 86400
+      tags: apt_update
+
+    # Some more dev env only related tasks...
+    # - name: install debconf utils
+    #   apt:
+    #     name: debconf-utils

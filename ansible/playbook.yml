@@ -1,0 +1,4 @@
+---
+- import_playbook: play_dev.yml
+- import_playbook: play_k8s_masters.yml
+- import_playbook: play_k8s_nodes.yml
