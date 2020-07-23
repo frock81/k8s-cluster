@@ -5,5 +5,6 @@
 - import_playbook: play_k8s.yml
   when: "'k8s_master' in group_names"
 
+# The other cluster nodes are setup after the master node.
 - import_playbook: play_k8s.yml
   when: "'k8s_master' not in group_names"

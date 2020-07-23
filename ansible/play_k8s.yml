@@ -1,11 +1,38 @@
 ---
+# Setup kubernetes cluster. Be sure to run the master play before the
+# other cluster nodes.
+
+# XXX: perhaps a refactor to put swap-off as `pre_tasks` and move the
+# `import_role` statements to a `roles` key.
 - hosts: k8s_nodes
   vars_files:
     - vars/k8s/{{ env }}.yml
     - vars/k8s/geerlingguy.pip.yml
     - vars/k8s/geerlingguy.docker-{{ env }}.yml
     - vars/k8s/geerlingguy.kubernetes.yml
-  tasks:
+  pre_tasks:
+    # See https://serverfault.com/a/931984/426435 and discussion
+    # https://github.com/kubernetes/kubernetes/issues/53533
+    #
+    # If you want to enable swap see geerlingguy.kubernetes
+    # (https://github.com/geerlingguy/ansible-role-kubernetes)
+    # For the appropriate way to setup the `kubernetes_kubelet_extra_args`
+    # variable to prevent errors.
+    - name: disable swap
+      block:
+        - name: Remove swapfile from /etc/fstab
+          mount:
+            name: "{{ item }}"
+            fstype: swap
+            state: absent
+          with_items:
+            - swap
+            - none
+
+        - name: Disable swap
+          command: swapoff -a
+          when: ansible_swaptotal_mb > 0
+      tags: swap
     - name: conditionally include variables for master
       include_vars:
         file: vars/k8s/geerlingguy.kubernetes-master.yml
@@ -16,9 +43,16 @@
         file: vars/k8s/geerlingguy.kubernetes-node.yml
       when: "'k8s_master' not in group_names"
 
-    - name: import common tasks for both master and other nodes
-      import_tasks: tasks/k8s.yml
+  roles:
+    - role: geerlingguy.pip
+      tags: pip
 
+    - role: geerlingguy.docker
+      tags: docker
+
+    - role: geerlingguy.kubernetes
+      tags: kubernetes
+  tasks:
     - name: Setup kubeconfig for vagrant user
       block:
         - name: create kube config directory for user vagrant
@@ -38,29 +72,3 @@
             group: vagrant
       when: env == 'dev' and 'k8s_master' in group_names
       tags: vagrant_kubeconfig
-
-    # FIXME: the apropriate way to do is to verify if the config is applied,
-    # then download and apply, perhaps using get_url + kubctl modules.
-    # - name: Install calico pod network
-    #   become: false
-    #   command: kubectl create -f https://docs.projectcalico.org/v3.4/getting-started/kubernetes/installation/hosted/calico.yaml
-    #   tags: calico
-
-    # This may not work if join command references 10.0.2.15 (host-only
-    # network)
-    #
-    # Also, perhaps the geerlingguy.kubernetes role already deal with
-    # joining.
-    # - name: Generate join command
-    #   command: kubeadm token create --print-join-command
-    #   register: join_command
-
-    # - name: Copy join command to local file
-    #   local_action:
-    #     module: copy
-    #     content: "{{ join_command.stdout_lines[0] }}"
-    #     dest: "./join-command"
-
-  handlers:
-    - name: import common handlers for k8s
-      import_tasks: handlers/k8s.yml
