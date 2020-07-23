@@ -1,5 +1,6 @@
 ---
 - import_playbook: play_dev.yml
+  when: env == 'dev'
 
 # The master must be setup previous the other nodes.
 - import_playbook: play_k8s.yml
@@ -8,3 +9,6 @@
 # The other cluster nodes are setup after the master node.
 - import_playbook: play_k8s.yml
   when: "'k8s_master' not in group_names"
+
+- import_playbook: play_verify.yml
+  when: env == 'dev'

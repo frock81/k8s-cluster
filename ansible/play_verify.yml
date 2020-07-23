@@ -1,0 +1,19 @@
+---
+# Play to verify cluster setup.
+
+- hosts: k8s_master
+  vars_files:
+    - vars/k8s/dev.yml
+  tasks:
+    - name: get cluster nodes via kubectl
+      command: kubectl get nodes
+      register: result_get_nodes
+
+    - debug:
+        var: result_get_nodes
+
+    - name: verify the total of cluster nodes instances
+      assert:
+        that:
+          - "result_get_nodes.stdout_lines | length ==
+              (k8s___cluster_nodes_instances + 1)"
