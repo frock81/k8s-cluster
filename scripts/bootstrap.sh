@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Commands to be executed at the provisioner host (the one that will execute the
-# ansible-playbook command)
+# ansible-playbook command). This will prepare the host to run the environment.
 
 # SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 ANSIBLE_PATH=/etc/ansible

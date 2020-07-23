@@ -3,6 +3,7 @@
   vars_files:
     - vars/k8s_masters/geerlingguy.pip.yml
     - vars/k8s_masters/geerlingguy.docker-{{ env }}.yml
+    - vars/k8s_masters/geerlingguy.kubernetes-master-dev.yml
   # Not using `roles` keyword as usual because it may mislead about the
   # roles used in the play as there will be other roles that will be
   # added via import/include.
@@ -61,7 +62,27 @@
       when: env == 'dev'
       tags: vagrant_kubeconfig
 
+    # FIXME: the apropriate way to do is to verify if the config is applied,
+    # then download and apply, perhaps using get_url + kubctl modules.
     # - name: Install calico pod network
     #   become: false
     #   command: kubectl create -f https://docs.projectcalico.org/v3.4/getting-started/kubernetes/installation/hosted/calico.yaml
     #   tags: calico
+
+    # This may not work if join command references 10.0.2.15 (host-only
+    # network)
+    - name: Generate join command
+      command: kubeadm token create --print-join-command
+      register: join_command
+
+    - name: Copy join command to local file
+      local_action:
+        module: copy
+        content: "{{ join_command.stdout_lines[0] }}"
+        dest: "./join-command"
+
+  handlers:
+    - name: docker status
+      service:
+        name: docker
+        state: started
