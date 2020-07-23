@@ -5,12 +5,14 @@
 # start up even if there is swap is enabled on your server, set this to:
 # "--fail-swap-on=false". Or to specify the node-ip advertised by
 # kubelet, set this to "--node-ip={{ ansible_host }}".
-kubernetes_kubelet_extra_args: "--node-ip=192.168.4.80"
+kubernetes_kubelet_extra_args: "--node-ip={{ k8s___node_ip }}"
 
 # Extra args to pass to `kubeadm init`.
-kubernetes_kubeadm_init_extra_opts: "--apiserver-cert-extra-sans='192.168.4.80'
-  --node-name k8s-master --pod-network-cidr=192.168.4.0/24"
+kubernetes_kubeadm_init_extra_opts: >-
+  --apiserver-cert-extra-sans='{{ k8s___master_ip_address }}'
+  --node-name {{ inventory_hostname }}
+  --pod-network-cidr={{ k8s___pod_network_cidr }}
 
 # Defaults to ansible_default_ipv4.address if not set.
 # Can be modified to get it from ansible facts.
-kubernetes_apiserver_advertise_address: "192.168.4.80"
+kubernetes_apiserver_advertise_address: "{{ k8s___master_ip_address }}"

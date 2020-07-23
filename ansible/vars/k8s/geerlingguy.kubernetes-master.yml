@@ -1,0 +1,9 @@
+---
+# Variables for the geerlingguy.kubernetes role to be applied to the master
+# node only.
+
+# Whether the particular server will serve as a Kubernetes master
+# (default) or node. The master will have kubeadm init run on it to
+# intialize the entire K8s control plane, while nodes will have kubeadm
+# join run on them to join them to the master.
+kubernetes_role: master

@@ -7,8 +7,8 @@ VM_MEMORY = 2048
 INSTANCES = 3
 
 # Controller config.
-$controller_hostname = "k8s-master"
-$controller_ip_address = "192.168.4.80"
+$controller_hostname = "k8s-1"
+$controller_ip_address = "192.168.4.81"
 
 # Sets guest environment variables.
 # @see https://github.com/hashicorp/vagrant/issues/7015
@@ -26,7 +26,7 @@ Vagrant.configure("2") do |config|
   config.ssh.private_key_path = "./ansible/insecure_private_key"
   config.vm.box = VAGRANT_BOX
 
-  (1..INSTANCES).each do |i|
+  (2..INSTANCES).each do |i|
     config.vm.define "k8s-#{i}" do |machine|
       machine.vm.provider "virtualbox" do |vbox|
         vbox.name = "k8s-#{i}"
@@ -41,7 +41,11 @@ Vagrant.configure("2") do |config|
     end
   end
 
-  # The master will provision the other nodes.
+  # The controller will provision the other nodes. In Windows
+  # environment there may be issues in provisioning so we add an extra
+  # virtual machine to provision the others.
+  #
+  # It will also be our master and it will be allowed to run pods.
   config.vm.define $controller_hostname do |machine|
     machine.vm.provider "virtualbox" do |vbox|
       vbox.name = $controller_hostname

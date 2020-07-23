@@ -1,46 +1,14 @@
 ---
-- hosts: k8s_masters
+- hosts: k8s_master
   vars_files:
-    - vars/k8s_masters/geerlingguy.pip.yml
-    - vars/k8s_masters/geerlingguy.docker-{{ env }}.yml
-    - vars/k8s_masters/geerlingguy.kubernetes-master-dev.yml
-  # Not using `roles` keyword as usual because it may mislead about the
-  # roles used in the play as there will be other roles that will be
-  # added via import/include.
+    - vars/k8s/{{ env }}.yml
+    - vars/k8s/geerlingguy.pip.yml
+    - vars/k8s/geerlingguy.docker-{{ env }}.yml
+    - vars/k8s/geerlingguy.kubernetes.yml
+    - vars/k8s/geerlingguy.kubernetes-master.yml
   tasks:
-    - name: import Pip role
-      import_role:
-        name: geerlingguy.pip
-      tags: pip
-
-    - name: import Docker role
-      import_role:
-        name: geerlingguy.docker
-      tags: docker
-
-    - name: disable swap
-      block:
-        - name: Remove swapfile from /etc/fstab
-          mount:
-            name: "{{ item }}"
-            fstype: swap
-            state: absent
-          with_items:
-            - swap
-            - none
-
-        - name: Disable swap
-          command: swapoff -a
-          when: ansible_swaptotal_mb > 0
-      tags: swap
-
-    - name: import Kubernetes role
-      import_role:
-        name: geerlingguy.kubernetes
-      tags: kubernetes
-
-    - name: force services restart to ensure configuration
-      meta: flush_handlers
+    - name: import common tasks for both master and other nodes
+      import_tasks: tasks/k8s.yml
 
     - name: Setup kubeconfig for vagrant user
       block:
@@ -71,6 +39,9 @@
 
     # This may not work if join command references 10.0.2.15 (host-only
     # network)
+    #
+    # Also, perhaps the geerlingguy.kubernetes role already deal with
+    # joining.
     - name: Generate join command
       command: kubeadm token create --print-join-command
       register: join_command
@@ -82,7 +53,5 @@
         dest: "./join-command"
 
   handlers:
-    - name: docker status
-      service:
-        name: docker
-        state: started
+    - name: import common handlers for k8s
+      import_tasks: handlers/k8s.yml

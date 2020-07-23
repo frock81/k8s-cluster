@@ -3,15 +3,20 @@
   become: yes
   roles:
     - role: robertdebock.bootstrap
+  vars:
+    domain_name: localdomain
+    ip_prefix: "192.168.4.8"
+    instances: 3
+    # Leave empty ("") if won't use it.
+    apt_cacher_url: "http://10.0.2.2:3142"
   tasks:
     - name: hosts file
       lineinfile:
         path: /etc/hosts
-        regexp: "^192.168.4.8{{ item }}"
-        line: "192.168.4.8{{ item }}
-          {{'k8s-' + item  if item != '0' else 'k8s-master' }}.localdomain"
+        regexp: "^{{ ip_prefix }}{{ item }}"
+        line: "{{ ip_prefix }}{{ item }} k8s-{{ item }}.{{ domain_name }}"
         state: present
-      with_sequence: start=0 end=3
+      with_sequence: start=1 end={{ instances }}
       tags: hosts
         
     # May causes apt lock acquisition problems.
@@ -33,13 +38,18 @@
         - apt-daily.timer
       tags: apt_daily
 
+    # To speed-up things in my computer. Comment when done. Re-enable as needed.
+    - name: setup apt-cacher-ng
+      copy:
+        dest: /etc/apt/apt.conf
+        content: |
+          #Acquire::AllowInsecureRepositories true; # Allow to use an offline repo
+          Acquire::http::proxy "{{ apt_cacher_url }}"; # The cache proxy repo
+          Acquire::https::proxy "DIRECT"; # Allow cache proxy SSL repos
+      when: apt_cacher_url | length != 0
+
     - name: update apt cache
       apt:
         update_cache: yes
         cache_valid_time: 86400
       tags: apt_update
-
-    # Some more dev env only related tasks...
-    # - name: install debconf utils
-    #   apt:
-    #     name: debconf-utils

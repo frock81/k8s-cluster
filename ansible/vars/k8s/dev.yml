@@ -1,0 +1,19 @@
+---
+# Variables for the development environment.
+#
+# We could have prefixed those with `k8s___dev___` to maitain
+# consistency and use `{{ lookup('vars', env + '___variable_name') }} in
+# the tasks but this way is simpler. Refactor this if production and
+# development variables are getting confused (the production and the
+# development vars files will be too similar).
+
+# Ip address of the master.
+# May be modified to get from ansible facts vi interface.
+k8s___master_ip_address: 192.168.4.81
+
+# Pod network
+k8s___pod_network_cidr: "192.168.4.0/24"
+
+# Node ip. Used in KUBELET_EXTRA_ARGS in /etc/default/kubelet.
+# May also be modified to be set on a per host basis.
+k8s___node_ip: "{{ ansible_enp0s8.ipv4.address }}"

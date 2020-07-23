@@ -1,0 +1,6 @@
+# common handlers for k8s plays.
+
+- name: docker status
+  service:
+    name: docker
+    state: started

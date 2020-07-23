@@ -1,2 +1,23 @@
 ---
-- hosts: k8s_nodes
+- hosts: k8s_nodes:!k8s_master
+  vars_files:
+    - vars/k8s/{{ env }}.yml
+    - vars/k8s/geerlingguy.pip.yml
+    - vars/k8s/geerlingguy.docker-{{ env }}.yml
+    - vars/k8s/geerlingguy.kubernetes.yml
+    - vars/k8s/geerlingguy.kubernetes-nodes.yml
+  tasks:
+    - name: import common tasks for both master and other nodes
+      import_tasks: tasks/k8s.yml
+
+    # XXX: perhaps it is dealt in geerlingguy role and not needed
+    # (the following two tasks).
+    - name: Copy the join command to server location
+      copy: src=join-command dest=/tmp/join-command.sh mode=0777
+
+    # - name: Join the node to cluster
+    #   command: sh /tmp/join-command.sh
+
+  handlers:
+    - name: import common handlers for k8s
+      import_tasks: handlers/k8s.yml

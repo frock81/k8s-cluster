@@ -1,0 +1,35 @@
+# Common tasks for both master and nodes.
+
+- name: import Pip role
+  import_role:
+    name: geerlingguy.pip
+  tags: pip
+
+- name: import Docker role
+  import_role:
+    name: geerlingguy.docker
+  tags: docker
+
+- name: disable swap
+  block:
+    - name: Remove swapfile from /etc/fstab
+      mount:
+        name: "{{ item }}"
+        fstype: swap
+        state: absent
+      with_items:
+        - swap
+        - none
+
+    - name: Disable swap
+      command: swapoff -a
+      when: ansible_swaptotal_mb > 0
+  tags: swap
+
+- name: import Kubernetes role
+  import_role:
+    name: geerlingguy.kubernetes
+  tags: kubernetes
+
+- name: force services restart to ensure configuration
+  meta: flush_handlers
